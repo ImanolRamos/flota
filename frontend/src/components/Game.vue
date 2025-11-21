@@ -38,10 +38,17 @@ const isMyTurn = computed(() => state.currentTurnSid === state.me.sid)
 <template>
   <v-card class="pa-4">
     <v-card-title class="d-flex align-center justify-space-between">
-      <span>Partida en curso</span>
-      <v-chip :color="isMyTurn ? 'green' : 'grey'">
-        Turno: {{ isMyTurn ? 'Tu turno' : 'Turno del rival' }}
-      </v-chip>
+        <div>
+            <span>Partida en curso</span>
+            <div class="players">
+            <strong>{{ state.me.name || 'Yo' }}</strong>
+            vs
+            <strong>{{ state.opponent.name || 'Rival' }}</strong>
+            </div>
+        </div>
+        <v-chip :color="isMyTurn ? 'green' : 'grey'">
+            Turno: {{ isMyTurn ? 'Tu turno' : 'Turno del rival' }}
+        </v-chip>
     </v-card-title>
 
     <v-card-text>
@@ -285,6 +292,15 @@ const isMyTurn = computed(() => state.currentTurnSid === state.me.sid)
 .v-list-item:hover {
   transform: translateX(5px);
   background: rgba(0,150,255,0.25);
+}
+.players {
+  font-size: 0.9rem;
+  color: #bbdefb;
+  margin-top: 4px;
+}
+.players strong {
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0,150,255,0.6);
 }
 
 /* =========================

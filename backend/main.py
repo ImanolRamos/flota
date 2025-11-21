@@ -34,18 +34,36 @@ async def disconnect(sid):
     print(f"[{sid}] desconectado")
     for room_id, state in list(rooms.items()):
         if sid in state["players"]:
-            opponent = [p for p in state["players"] if p != sid]
-            if opponent:
-                await sio.emit("opponent_left", {}, room=opponent[0])
+            # Obtener el SID del oponente
+            opponent_sids = [p for p in state["players"] if p != sid]
+            
+            # Si hay un oponente, notificarle que el otro jugador se fue
+            if opponent_sids:
+                await sio.emit("opponent_left", {}, room=opponent_sids[0])
+            
+            # Cerrar y eliminar la sala
             await sio.close_room(room_id)
             rooms.pop(room_id, None)
             break
+
+# --- FUNCIÓN AUXILIAR AÑADIDA ---
+def get_players_data(state):
+    """Prepara los datos esenciales de los jugadores (sid, name) para enviar al cliente."""
+    players_data = []
+    for sid, player_info in state["players"].items():
+        players_data.append({
+            "sid": sid,
+            "name": player_info["name"]
+        })
+    return players_data
+# --------------------------------
 
 @sio.event
 async def create_room(sid, data):
     print("Evento create_room:", sid, data)
     room_id = data["roomId"]
     name = data.get("name", "Jugador")
+    
     rooms[room_id] = {
         "players": {sid: {"name": name, "ready": False, "board": {}, "hits": set()}},
         "order": [sid],
@@ -53,18 +71,36 @@ async def create_room(sid, data):
         "started": False,
     }
     await sio.enter_room(sid, room_id)
-    await sio.emit("room_update", {"roomId": room_id}, room=room_id)
+    
+    # 🎯 ARREGLO: Incluir la lista de jugadores en el payload
+    state = rooms[room_id]
+    players_data = get_players_data(state)
+    await sio.emit("room_update", {"roomId": room_id, "players": players_data}, room=room_id)
 
 @sio.event
 async def join_room(sid, data):
     print("Evento join_room:", sid, data)
     room_id = data["roomId"]
     name = data.get("name", "Jugador")
+    
+    if room_id not in rooms:
+        await sio.emit("error_message", {"error": "Sala no existe"}, room=sid)
+        return
+
     state = rooms[room_id]
+    
+    # Validación: la sala no debe estar llena
+    if len(state["order"]) >= 2:
+        await sio.emit("error_message", {"error": "Sala llena"}, room=sid)
+        return
+        
     state["players"][sid] = {"name": name, "ready": False, "board": {}, "hits": set()}
     state["order"].append(sid)
     await sio.enter_room(sid, room_id)
-    await sio.emit("room_update", {"roomId": room_id}, room=room_id)
+    
+    # 🎯 ARREGLO: Incluir la lista de jugadores en el payload (ahora hay dos)
+    players_data = get_players_data(state)
+    await sio.emit("room_update", {"roomId": room_id, "players": players_data}, room=room_id)
 
 @sio.event
 async def place_ships(sid, data):
@@ -85,10 +121,12 @@ async def place_ships(sid, data):
 @sio.event
 async def fire(sid, data):
     print("Evento fire:", sid, data)
-    room_id = data["RoomId"] if "RoomId" in data else data["roomId"]
+    # Aceptamos "RoomId" o "roomId" por robustez, pero es mejor estandarizarlo
+    room_id = data.get("RoomId") or data["roomId"] 
     cell = data["cell"]
     state = rooms[room_id]
     current_sid = state["order"][state["turnIndex"]]
+    
     if sid != current_sid:
         await sio.emit("error_message", {"error": "No es tu turno"}, room=sid)
         return
