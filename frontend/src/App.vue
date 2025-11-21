@@ -1,47 +1,25 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { state, setupSocketHandlers } from './stores/useGame'
+import SocketService from './services/SocketService'
+import { onMounted } from 'vue'
+import Lobby from './components/Lobby.vue'
+import Preparation from './components/Preparation.vue'
+import Game from './components/Game.vue'
+
+onMounted(() => {
+  setupSocketHandlers()
+  SocketService.connect()
+})
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <v-app>
+    <v-main>
+      <v-container>
+        <Lobby v-if="!state.roomId" />
+        <Preparation v-else-if="!state.started" />
+        <Game v-else />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
