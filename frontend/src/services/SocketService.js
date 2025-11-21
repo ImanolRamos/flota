@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
-const SOCKET_URL = "http://192.168.2.104:3003";
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3003";
 
 const socket = io(SOCKET_URL, {
   autoConnect: false,
   transports: ["websocket"],
 });
+
 
 socket.on("connect", () => {
   console.log("✅ Conectado al servidor con id:", socket.id);

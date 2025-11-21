@@ -1,9 +1,11 @@
-import socketio
+import socketio, os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-FRONTEND_ORIGIN = "http://192.168.2.104:5173"
+# FRONTEND_ORIGIN = "http://192.168.2.104:5173"
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:8080")
+LISTEN_PORT = int(os.getenv("LISTEN_PORT", 3003))
 
 sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=[FRONTEND_ORIGIN])
 socket_app = socketio.ASGIApp(sio)
@@ -157,4 +159,4 @@ async def fire(sid, data):
     await sio.emit("turn_changed", {"turn": state["order"][state["turnIndex"]]}, room=room_id)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=3003, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=LISTEN_PORT, reload=True)
