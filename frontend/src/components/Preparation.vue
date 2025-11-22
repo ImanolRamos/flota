@@ -18,7 +18,7 @@ const shipDefinitions = {
 
 const ships = ref(JSON.parse(JSON.stringify(shipDefinitions)))
 const selectedShip = ref('carrier')
-const orientation = ref('horizontal') // 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up'
+const orientation = ref('horizontal')
 
 const message = ref('')
 const messageType = ref('error')
@@ -103,12 +103,14 @@ function handleCellClick(cell) {
 }
 
 const hoverPreview = ref([])
+
 function previewCoords(startCell) {
   if (availableShips.value.length === 0) return
   const shipKey = selectedShip.value
   const shipLength = ships.value[shipKey].size
   hoverPreview.value = calcCoords(startCell, shipLength)
 }
+
 function clearPreview() {
   hoverPreview.value = []
 }
@@ -134,10 +136,12 @@ function ready() {
 </script>
 
 <template>
-  <v-card class="pa-4">
+  <v-card class="pa-4 prep-card">
     <v-card-title>Preparación</v-card-title>
+
     <v-card-text>
       <v-select v-model="selectedShip" :items="availableShips" label="Barco" />
+
       <v-btn-toggle v-model="orientation" mandatory class="mb-4">
         <v-btn value="horizontal"><v-icon>mdi-arrow-right</v-icon></v-btn>
         <v-btn value="vertical"><v-icon>mdi-arrow-down</v-icon></v-btn>
@@ -146,7 +150,11 @@ function ready() {
       </v-btn-toggle>
 
       <div class="board-grid">
-        <div v-for="row in cells" :key="row[0]" class="d-flex">
+        <div
+          v-for="row in cells"
+          :key="row[0]"
+          class="board-row"
+        >
           <v-btn
             v-for="cell in row"
             :key="cell"
@@ -171,30 +179,116 @@ function ready() {
     </v-snackbar>
   </v-card>
 </template>
+
 <style scoped>
+
+
+/* ======================================================
+   🟦 TARJETA PRINCIPAL CON SCROLL VERTICAL
+   ====================================================== */
+.prep-card {
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .prep-card {
+    max-height: 100vh;
+    padding: 8px !important;
+  }
+}
+
+/* ======================================================
+   🟦 TABLERO (SCROLL HORIZONTAL GLOBAL)
+   ====================================================== */
 .board-grid {
   display: flex;
   flex-direction: column;
   border: 3px solid #2196f3;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.3);
   background: linear-gradient(180deg, #0d1b2a 0%, #1b263b 100%);
+  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.3);
   padding: 8px;
+
+  /* 🔥 Scroll horizontal general (todas las filas juntas) */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  max-width: 100%;
 }
 
+.board-grid::-webkit-scrollbar {
+  display: none;
+}
+
+/* ======================================================
+   🟦 FILAS CON 10 COLUMNAS (SIN WRAP)
+   ====================================================== */
+.board-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+/* ======================================================
+   🟦 CELDAS BASE (ESCRITORIO)
+   ====================================================== */
 .board-cell {
-  min-width: 40px !important;
-  max-width: 40px !important;
+  width: 40px !important;
   height: 40px !important;
+  aspect-ratio: 1 / 1;
+
   margin: 2px;
   padding: 0;
+
   font-size: 0.75rem;
   font-weight: bold;
   border-radius: 6px !important;
   transition: all 0.25s ease;
   color: #e3f2fd;
 }
+
+/* ======================================================
+   🟦 MÓVIL — TABLERO AJUSTADO PERFECTO A 10 COLUMNAS
+   ====================================================== */
+@media (max-width: 600px) {
+
+  .board-grid {
+    padding: 4px;
+    max-width: 100vw;
+  }
+
+  .board-cell {
+    width: 9vw !important;     /* 10 celdas = 90vw → caben */
+    height: 9vw !important;
+    margin: 1px;
+    font-size: 0.55rem;
+    border-radius: 4px !important;
+  }
+}
+
+/* ======================================================
+   🟦 ESCRITORIO GRANDE (≥1400px)
+   ====================================================== */
+@media (min-width: 1400px) {
+  .board-cell {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 0.85rem;
+  }
+
+  .board-grid {
+    max-width: 600px;
+  }
+}
+
+/* ======================================================
+   🟦 COLORES Y ANIMACIONES BARCO / HOVER
+   ====================================================== */
 
 /* Agua */
 .board-cell.grey-lighten-3 {
@@ -216,13 +310,14 @@ function ready() {
   animation: pulsePreview 1s infinite alternate;
 }
 
-/* Animación fantasma */
 @keyframes pulsePreview {
   from { background-color: rgba(96, 125, 139, 0.4); }
   to   { background-color: rgba(96, 125, 139, 0.8); }
 }
 
-/* Botones de orientación */
+/* ======================================================
+   🟦 BOTONES DE ORIENTACIÓN
+   ====================================================== */
 .v-btn-toggle {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
@@ -242,10 +337,13 @@ function ready() {
   box-shadow: 0 0 10px rgba(33, 150, 243, 0.6);
 }
 
-/* Snackbar */
+/* ======================================================
+   🟦 SNACKBAR
+   ====================================================== */
 .v-snackbar {
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   font-weight: bold;
 }
+
 </style>

@@ -15,7 +15,7 @@ onMounted(() => {
 <template>
   <v-app>
     <v-main>
-      <v-container>
+      <v-container fluid >
         <Lobby v-if="state.currentView === 'lobby'" />
         <Preparation v-else-if="state.currentView === 'preparation'" />
         <Game v-else-if="state.currentView === 'game'" />
